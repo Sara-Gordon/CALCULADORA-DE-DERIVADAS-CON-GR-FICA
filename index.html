@@ -1,26 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Derivada - Primer Principio</title>
-
-  <!-- MathJax para fórmulas -->
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-  <!-- Plotly para gráficas -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-  <!-- math.js para cálculos -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Derivadas por Primer Principio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/algebrite/1.5.0/algebrite.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
+      margin: 40px;
       background-color: #fff0f5;
-      color: #4a004d;
-      padding: 20px;
+      color: #4b004b;
     }
 
     h1 {
@@ -28,119 +19,141 @@
       color: #d63384;
     }
 
-    input, button {
+    input[type="text"] {
+      width: 300px;
       padding: 10px;
-      margin: 8px;
-      border: 2px solid #d63384;
-      border-radius: 8px;
       font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
 
     button {
-      background-color: #f8b7d4;
-      color: #4a004d;
-      font-weight: bold;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
       cursor: pointer;
+      margin-left: 10px;
     }
 
-    .resultado {
-      background: #ffe6f0;
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 20px;
-      box-shadow: 0 0 10px #e699c6;
-      font-size: 17px;
+    button:hover {
+      background-color: #ff1493;
     }
 
-    #grafica {
+    #result {
       margin-top: 30px;
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    canvas {
+      margin-top: 30px;
+      border: 1px solid #ccc;
+      background: white;
     }
   </style>
 </head>
 <body>
+  <h1>📘 Derivadas por Primer Principio</h1>
+  <p>Ingresa una función (usa por ejemplo: <i>x2, 1/x, sin(x), ln(x), raiz(x), ex</i>):</p>
+  <input type="text" id="funcion" placeholder="Ej: x2 + 3x" />
+  <button onclick="resolver()">Resolver</button>
 
-  <h1>🌸 Derivada usando el Primer Principio 🌸</h1>
-  <p><strong>Introduce la función:</strong></p>
-  <input type="text" id="funcion" value="x^2 + 3*x + 2" size="35">
-  <p><strong>Introduce el punto x<sub>0</sub>:</strong></p>
-  <input type="number" id="x0" value="2" step="any">
-  <button onclick="calcular()">Calcular derivada</button>
-
-  <div class="resultado" id="explicacion"></div>
-  <div id="grafica" style="width:100%; height:500px;"></div>
+  <div id="result"></div>
+  <canvas id="grafico" width="500" height="300"></canvas>
 
   <script>
-    function calcular() {
-      const funcionStr = document.getElementById("funcion").value;
-      const x0 = parseFloat(document.getElementById("x0").value);
+    function resolver() {
+      const funcionInput = document.getElementById("funcion").value.trim();
+      const resultDiv = document.getElementById("result");
 
       try {
-        const parser = math.parser();
-        parser.evaluate(`f(x) = ${funcionStr}`);
+        let funcionStr = funcionInput
+          .replace(/(\d)([a-zA-Z])/g, "$1*$2")
+          .replace(/x(\d)/g, "x*$1")
+          .replace(/(\d+)x/g, "$1*x")
+          .replace(/raiz\(([^)]+)\)/g, "sqrt($1)")
+          .replace(/ln/g, "log")
+          .replace(/ex/g, "e^x");
 
-        const f_xh_str = funcionStr.replace(/x/g, "(x+h)");
-        const resta = math.simplify(`(${f_xh_str}) - (${funcionStr})`).toString();
-        const fraccion = math.simplify(`(${resta}) / h`).toString();
-        const derivada = math.simplify(fraccion.replace(/h/g, "0")).toString();
+        const f_xh = Algebrite.run("simplify(subst(x+h, x, " + funcionStr + "))");
+        const f_x = Algebrite.run("simplify(" + funcionStr + ")");
+        const resta = Algebrite.run("simplify(" + f_xh + " - (" + f_x + "))");
+        const fraccion = Algebrite.run("simplify( (" + resta + ") / h )");
+        const derivada = Algebrite.run("simplify( subst(0, h, " + fraccion + ") )");
 
         let pasos = "";
-        pasos += "<b>1️⃣ Definición formal de la derivada:</b><br>\\[ f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h} \\]<br><br>";
-        pasos += `<b>2️⃣ Función dada:</b><br>\\[ f(x) = ${funcionStr} \\]<br><br>`;
-        pasos += `<b>3️⃣ Sustitución de x+h:</b><br>\\[ f(x+h) = ${f_xh_str} \\]<br><br>`;
-        pasos += `<b>4️⃣ Resta f(x+h) - f(x):</b><br>\\[ ${resta} \\]<br><br>`;
-        pasos += `<b>5️⃣ Aplicamos en la fracción:</b><br>\\[ \\frac{${resta}}{h} \\]<br><br>`;
-        pasos += `<b>6️⃣ Simplificamos la fracción:</b><br>\\[ ${fraccion} \\]<br><br>`;
-        pasos += `<b>7️⃣ Tomamos el límite cuando h → 0:</b><br>\\[ ${derivada} \\]<br><br>`;
-        pasos += `<b>8️⃣ Conclusión:</b><br>\\[ f'(x) = ${derivada} \\]`;
 
-        document.getElementById("explicacion").innerHTML = pasos;
+        pasos += "<b>1️⃣ Definición de la derivada:</b><br>\\[ f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h} \\]<br><br>";
+        pasos += `<b>2️⃣ Función dada:</b><br>\\[ f(x) = ${Algebrite.run("printlatex(" + funcionStr + ")")} \\]<br><br>`;
+        pasos += `<b>3️⃣ Sustitución:</b><br>\\[ f(x+h) = ${Algebrite.run("printlatex(" + f_xh + ")")} \\]<br><br>`;
+        pasos += `<b>4️⃣ Resta:</b><br>\\[ f(x+h) - f(x) = ${Algebrite.run("printlatex(" + resta + ")")} \\]<br><br>`;
+        pasos += `<b>5️⃣ Fracción:</b><br>\\[ \\frac{${Algebrite.run("printlatex(" + resta + ")")}}{h} \\]<br><br>`;
+        pasos += `<b>6️⃣ Simplificamos:</b><br>\\[ ${Algebrite.run("printlatex(" + fraccion + ")")} \\]<br><br>`;
+        pasos += `<b>7️⃣ Límite cuando h → 0:</b><br>\\[ \\lim_{h \\to 0} ${Algebrite.run("printlatex(" + fraccion + ")")} = ${Algebrite.run("printlatex(" + derivada + ")")} \\]<br><br>`;
+        pasos += `<b>8️⃣ Conclusión:</b><br>\\[ f'(x) = ${Algebrite.run("printlatex(" + derivada + ")")} \\]`;
+
+        resultDiv.innerHTML = pasos;
         MathJax.typeset();
 
-        // Gráfica
-        const f = (x) => parser.evaluate(`f(${x})`);
-        const df = (x) => parser.evaluate(derivada.replace(/x/g, `(${x})`));
-        const xs = [], ys1 = [], ys2 = [];
-
-        for (let xi = -10; xi <= 10; xi += 0.1) {
-          xs.push(xi);
-          ys1.push(f(xi));
-          ys2.push(df(xi));
-        }
-
-        const trace1 = {
-          x: xs,
-          y: ys1,
-          mode: 'lines',
-          name: 'f(x)',
-          line: { color: '#e75480' }
-        };
-
-        const trace2 = {
-          x: xs,
-          y: ys2,
-          mode: 'lines',
-          name: \"f'(x)\",
-          line: { color: '#800080' }
-        };
-
-        const layout = {
-          title: '🌸 Gráfica de f(x) y su derivada 🌸',
-          xaxis: { title: 'x', gridcolor: '#ffccdd' },
-          yaxis: { title: 'Valor', gridcolor: '#ffccdd' },
-          plot_bgcolor: '#fff0f5',
-          paper_bgcolor: '#fff0f5',
-          font: { color: '#800040', size: 14 }
-        };
-
-        Plotly.newPlot('grafica', [trace1, trace2], layout);
-
+        graficar(funcionStr);
       } catch (error) {
-        document.getElementById("explicacion").innerHTML =
-          `<p style="color:red;">⚠️ Error al procesar la función. Revisa la sintaxis.</p>`;
+        resultDiv.innerHTML = `<p style="color:red;">⚠️ No se pudo derivar la función.<br>Revisa la sintaxis o funciones usadas.</p>`;
+      }
+    }
+
+    function graficar(fx) {
+      try {
+        const canvas = document.getElementById("grafico");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const evaluar = x => {
+          try {
+            return Algebrite.run(`float(subst(x, ${x}, ${fx}))`);
+          } catch {
+            return NaN;
+          }
+        };
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const escalaX = 20;
+        const escalaY = 20;
+        const centroX = w / 2;
+        const centroY = h / 2;
+
+        // Ejes
+        ctx.strokeStyle = "#ccc";
+        ctx.beginPath();
+        ctx.moveTo(0, centroY);
+        ctx.lineTo(w, centroY);
+        ctx.moveTo(centroX, 0);
+        ctx.lineTo(centroX, h);
+        ctx.stroke();
+
+        // Función
+        ctx.beginPath();
+        ctx.strokeStyle = "#d63384";
+        for (let px = 0; px < w; px++) {
+          const x = (px - centroX) / escalaX;
+          const y = evaluar(x);
+          if (!isNaN(y)) {
+            const py = centroY - y * escalaY;
+            if (px === 0) {
+              ctx.moveTo(px, py);
+            } else {
+              ctx.lineTo(px, py);
+            }
+          }
+        }
+        ctx.stroke();
+      } catch (e) {
+        console.error("Error al graficar:", e);
       }
     }
   </script>
-
 </body>
 </html>
-
