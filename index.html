@@ -77,24 +77,24 @@ function calcular() {
     const f_xh_str = funcionStr.replace(/x/g, "(x+h)");
     const exprOriginal = math.parse(funcionStr);
     const exprXh = math.parse(f_xh_str);
-    const resta = math.simplify(`(${f_xh_str}) - (${funcionStr})`);
-    const fraccion = math.simplify(`(${resta}) / h`);
-    const derivada = math.simplify(fraccion.toString().replace(/h/g, "0"));
+    const resta = math.simplify(`(${f_xh_str}) - (${funcionStr})`).toString();
+    const fraccion = math.simplify(`(${resta}) / h`).toString();
+    const derivada = math.simplify(fraccion.replace(/h/g, "0")).toString();
 
-    pasos += `<b>1️⃣ Definición de la derivada:</b><br>\\[ f'(x) = \\lim_{h \to 0} \\frac{f(x+h) - f(x)}{h} \\]<br><br>`;
-    pasos += `<b>2️⃣ Función dada:</b> \\( f(x) = ${funcionStr} \\)<br><br>`;
+    pasos += `<b>1️⃣ Definición de la derivada:</b><br>\\[ f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h} \\]<br><br>`;
+    pasos += `<b>2️⃣ Función dada:</b><br>\\[ f(x) = ${funcionStr} \\]<br><br>`;
     pasos += `<b>3️⃣ Sustitución:</b><br>\\[ f(x+h) = ${f_xh_str} \\]<br><br>`;
-    pasos += `<b>4️⃣ Resta f(x+h) - f(x):</b><br>\\[ ${resta.toString()} \\]<br><br>`;
-    pasos += `<b>5️⃣ Aplicamos en la fracción:</b><br>\\[ \\frac{${resta.toString()}}{h} \\]<br><br>`;
-    pasos += `<b>6️⃣ Simplificamos:</b><br>\\[ ${fraccion.toString()} \\]<br><br>`;
-    pasos += `<b>7️⃣ Límite cuando h → 0:</b><br>\\[ ${derivada.toString()} \\]<br><br>`;
-    pasos += `<b>8️⃣ Conclusión:</b> La derivada es:<br>\\[ f'(x) = ${derivada.toString()} \\]`;
+    pasos += `<b>4️⃣ Resta f(x+h) - f(x):</b><br>\\[ f(x+h) - f(x) = ${resta} \\]<br><br>`;
+    pasos += `<b>5️⃣ Aplicamos en la fracción:</b><br>\\[ \frac{${resta}}{h} \\]<br><br>`;
+    pasos += `<b>6️⃣ Simplificamos:</b><br>\\[ \frac{${math.simplify(resta)}}{h} = ${fraccion} \\]<br><br>`;
+    pasos += `<b>7️⃣ Límite cuando h \to 0:</b><br>\\[ \lim_{h \to 0} ${fraccion} = ${derivada} \\]<br><br>`;
+    pasos += `<b>8️⃣ Conclusión:</b><br>\\[ f'(x) = ${derivada} \\]`;
 
     document.getElementById("explicacion").innerHTML = pasos;
     MathJax.typeset();
 
     const f = (x) => parser.evaluate(`f(${x})`);
-    const df = (x) => parser.evaluate(derivada.toString().replace(/x/g, `(${x})`));
+    const df = (x) => parser.evaluate(derivada.replace(/x/g, `(${x})`));
     const xs = [], ys1 = [], ys2 = [];
 
     for (let xi = -10; xi <= 10; xi += 0.1) {
@@ -137,3 +137,4 @@ function calcular() {
 
 </body>
 </html>
+
