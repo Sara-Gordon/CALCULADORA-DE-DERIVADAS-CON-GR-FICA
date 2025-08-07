@@ -2,150 +2,134 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Derivadas Paso a Paso ✨</title>
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <title>Derivada paso a paso</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #fff0f5;
-      color: #333;
       padding: 20px;
+      background-color: #fff0f5;
+      color: #333;
     }
 
     h1 {
-      color: #c71585;
-      text-align: center;
-      font-size: 2.5em;
+      color: #d63384;
     }
 
     input, button {
-      font-size: 1em;
-      padding: 10px;
-      margin: 10px 0;
-      border: 2px solid #c71585;
+      padding: 8px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    .steps {
+      margin-top: 20px;
+      background-color: #ffe6f0;
       border-radius: 10px;
-    }
-
-    button {
-      background-color: #c71585;
-      color: white;
-      cursor: pointer;
-    }
-
-    .resultado, .grafica {
-      background-color: #ffe4ec;
       padding: 20px;
-      border-radius: 15px;
-      margin-top: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    .paso {
+    .formula {
+      background-color: white;
+      padding: 10px;
+      font-size: 18px;
+      border-left: 4px solid #d63384;
       margin-bottom: 15px;
-      line-height: 1.6;
+      font-family: Cambria, serif;
     }
 
-    #grafico {
-      margin-top: 20px;
+    #plot {
+      margin-top: 40px;
     }
+
   </style>
 </head>
 <body>
-  <h1>🧠 Derivadas Paso a Paso</h1>
-  <p>Escribe una función (ej: <code>x^2</code>, <code>1/x</code>, <code>sin(x)</code>, <code>sqrt(x)</code>):</p>
-  <input type="text" id="funcion" placeholder="Ejemplo: x^2 + 3x" />
-  <button onclick="resolver()">Mostrar derivada paso a paso</button>
 
-  <div id="resultado" class="resultado"></div>
-  <div id="grafico" class="grafica"></div>
+  <h1>📘 Derivada por el primer principio</h1>
+  <label>Ingresa una función (usa "x", por ejemplo: x^2, 1/x, sin(x), sqrt(x)):</label><br/>
+  <input id="funcion" placeholder="Ejemplo: x^2" />
+  <button onclick="calcular()">Calcular derivada</button>
+
+  <div class="formula" id="formulafrac">
+    $$f'(x) = \lim_{h \to 0} \dfrac{f(x+h) - f(x)}{h}$$
+  </div>
+
+  <div id="pasos" class="steps"></div>
+
+  <div id="plot"></div>
 
   <script>
-    function resolver() {
-      const funcionInput = document.getElementById('funcion').value;
-      const resultadoDiv = document.getElementById('resultado');
-      const graficoDiv = document.getElementById('grafico');
-      resultadoDiv.innerHTML = "";
-      graficoDiv.innerHTML = "";
-
+    function calcular() {
+      const fInput = document.getElementById("funcion").value;
+      const pasos = document.getElementById("pasos");
+      pasos.innerHTML = "";
+      let f;
       try {
-        const f = math.parse(funcionInput);
-        const df = math.derivative(f, 'x');
-
-        const fStr = f.toString();
-        const dfStr = df.toString();
-
-        // PASO A PASO
-        let pasos = `
-          <div class="paso"><b>PASO 1:</b> Se parte de la definición formal de derivada:</div>
-          <div class="paso">\\[ f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h} \\]</div>
-
-          <div class="paso"><b>PASO 2:</b> Se reemplaza la función original: \\( f(x) = ${fStr} \\)</div>
-
-          <div class="paso"><b>PASO 3:</b> Se calcula \\( f(x+h) \\): sustituimos \\( x \\) por \\( x+h \\)</div>
-          <div class="paso">\\( f(x+h) = ${math.simplify(f.toString().replaceAll('x', '(x+h)')).toString()} \\)</div>
-
-          <div class="paso"><b>PASO 4:</b> Se aplica la fórmula: </div>
-          <div class="paso">\\[ \\frac{${math.simplify(f.toString().replaceAll('x', '(x+h)')).toString()} - (${fStr})}{h} \\]</div>
-
-          <div class="paso"><b>PASO 5:</b> Se simplifica la expresión anterior.</div>
-
-          <div class="paso"><b>PASO 6:</b> Se toma el límite cuando \\( h \\to 0 \\):</div>
-          <div class="paso">\\[ f'(x) = ${dfStr} \\]</div>
-
-          <div class="paso"><b>PASO 7:</b> Esta es la derivada obtenida por el primer principio de derivación.</div>
-
-          <div class="paso"><b>PASO 8:</b> Finalmente se representa la gráfica de \\( f(x) \\) y \\( f'(x) \\).</div>
-        `;
-
-        resultadoDiv.innerHTML = pasos;
-        MathJax.typeset(); // renderiza MathJax
-
-        // GRAFICAR
-        const exprOriginal = math.compile(fStr);
-        const exprDerivada = math.compile(dfStr);
-
-        const x_vals = math.range(-10, 10, 0.5).toArray();
-        const y_vals = x_vals.map(x => {
-          try { return exprOriginal.evaluate({x}); }
-          catch { return null; }
-        });
-        const dy_vals = x_vals.map(x => {
-          try { return exprDerivada.evaluate({x}); }
-          catch { return null; }
-        });
-
-        const trace1 = {
-          x: x_vals,
-          y: y_vals,
-          mode: 'lines',
-          name: 'f(x)',
-          line: { color: '#d87093', width: 3 }
-        };
-
-        const trace2 = {
-          x: x_vals,
-          y: dy_vals,
-          mode: 'lines',
-          name: "f'(x)",
-          line: { color: '#8b008b', width: 3, dash: 'dot' }
-        };
-
-        const layout = {
-          title: 'Gráfica de la función y su derivada',
-          xaxis: { title: 'x' },
-          yaxis: { title: 'y' },
-          plot_bgcolor: '#fff0f5',
-          paper_bgcolor: '#fff0f5'
-        };
-
-        Plotly.newPlot(graficoDiv, [trace1, trace2], layout);
-      } catch (error) {
-        resultadoDiv.innerHTML = `<b style="color: red;">⚠️ Error al procesar la función. Asegúrate de escribirla correctamente.</b>`;
+        f = math.parse(fInput).compile();
+      } catch (e) {
+        pasos.innerHTML = "<b style='color:red'>⚠️ Error al procesar la función. Asegúrate de escribirla correctamente.</b>";
+        return;
       }
+
+      const x = math.symbolicUtils.symbol("x");
+      const h = math.symbolicUtils.symbol("h");
+      const fx = math.parse(fInput);
+      const fxh = math.parse(fInput.replace(/x/g, "(x+h)"));
+
+      const paso1 = `1️⃣ Definimos f(x) = ${fInput}`;
+      const paso2 = `2️⃣ Calculamos f(x+h): f(x+h) = ${fxh.toString()}`;
+      const paso3 = `3️⃣ Calculamos f(x+h) - f(x): ${fxh.toString()} - (${fx.toString()})`;
+      const paso4 = `4️⃣ Lo colocamos sobre h: \\( \\frac{${fxh.toString()} - (${fx.toString()})}{h} \\)`;
+      const paso5 = `5️⃣ Aplicamos el límite cuando h → 0`;
+      const paso6 = `6️⃣ Simplificamos la expresión (si es posible)`;
+      const paso7 = `7️⃣ Reemplazamos h = 0 para obtener la derivada`;
+      const paso8 = `8️⃣ Resultado: f'(x) = ${math.derivative(fInput, 'x').toString()}`;
+
+      const steps = [paso1, paso2, paso3, paso4, paso5, paso6, paso7, paso8];
+      steps.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "formula";
+        div.innerHTML = p.replace(/\\\(/g, "<span style='font-family:serif'>").replace(/\\\)/g, "</span>");
+        pasos.appendChild(div);
+      });
+
+      // Graficar función
+      const fEvaluated = x => {
+        try {
+          return f.evaluate({ x });
+        } catch (e) {
+          return NaN;
+        }
+      };
+
+      const xVals = [], yVals = [];
+      for (let i = -10; i <= 10; i += 0.2) {
+        xVals.push(i);
+        yVals.push(fEvaluated(i));
+      }
+
+      Plotly.newPlot('plot', [{
+        x: xVals,
+        y: yVals,
+        mode: 'lines',
+        line: { color: 'deeppink' },
+        name: `f(x) = ${fInput}`
+      }], {
+        title: 'Gráfica de la función',
+        paper_bgcolor: '#fff0f5',
+        plot_bgcolor: '#fff0f5',
+        xaxis: { gridcolor: '#ffb6c1', title: 'x' },
+        yaxis: { gridcolor: '#ffb6c1', title: 'f(x)' }
+      });
     }
+  </script>
+
+  <!-- MathJax para fórmulas bonitas -->
+  <script type="text/javascript" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
 </body>
 </html>
